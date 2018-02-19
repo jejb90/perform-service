@@ -5,6 +5,7 @@ import { alertActions } from './';
 export const entrustActions = {
     register,
     getAll,
+    google,
 };
 
 function register(serv) {
@@ -12,6 +13,28 @@ function register(serv) {
         dispatch(request(serv));
 
         entrustService.register(serv)
+            .then(
+                serv => {
+                    dispatch(success());
+                    dispatch(alertActions.success('Servicio Registrado'));
+                },
+                error => {
+                    dispatch(failure(error));
+                    dispatch(alertActions.error(error));
+                }
+            );
+    };
+
+    function request(serv) { return { type: entrustConstants.REGISTER_REQUEST, serv } }
+    function success(serv) { return { type: entrustConstants.REGISTER_SUCCESS, serv } }
+    function failure(error) { return { type: entrustConstants.REGISTER_FAILURE, error } }
+}
+
+function google(serv) {
+    return dispatch => {
+        dispatch(request(serv));
+
+        entrustService.google(serv)
             .then(
                 serv => {
                     dispatch(success());

@@ -1,6 +1,6 @@
-
 let users = JSON.parse(localStorage.getItem('users')) || [];
-    
+let entrusts = JSON.parse(localStorage.getItem('entrusts')) || [];
+
 export function configureFakeBackend() {
     let realFetch = window.fetch;
     window.fetch = function (url, opts) {
@@ -21,7 +21,7 @@ export function configureFakeBackend() {
                             lastName: user.lastName,
                             token: 'fake-jwt-token'
                         };
-                        resolve({ ok: true, json: () => responseJson });
+                        resolve({ok: true, json: () => responseJson});
                     } else {
                         reject('Username o contraseña es incorrecta');
                     }
@@ -30,7 +30,7 @@ export function configureFakeBackend() {
                 }
                 if (url.endsWith('/users') && opts.method === 'GET') {
                     if (opts.headers && opts.headers.Authorization === 'Bearer fake-jwt-token') {
-                        resolve({ ok: true, json: () => users });
+                        resolve({ok: true, json: () => users});
                     } else {
                         reject('No autorizado');
                     }
@@ -40,10 +40,12 @@ export function configureFakeBackend() {
                     if (opts.headers && opts.headers.Authorization === 'Bearer fake-jwt-token') {
                         let urlParts = url.split('/');
                         let id = parseInt(urlParts[urlParts.length - 1]);
-                        let matchedUsers = users.filter(user => { return user.id === id; });
+                        let matchedUsers = users.filter(user => {
+                            return user.id === id;
+                        });
                         let user = matchedUsers.length ? matchedUsers[0] : null;
 
-                        resolve({ ok: true, json: () => user});
+                        resolve({ok: true, json: () => user});
                     } else {
                         reject('No autorizado');
                     }
@@ -53,7 +55,9 @@ export function configureFakeBackend() {
                 if (url.endsWith('/users/register') && opts.method === 'POST') {
                     let newUser = JSON.parse(opts.body);
 
-                    let duplicateUser = users.filter(user => { return user.username === newUser.username; }).length;
+                    let duplicateUser = users.filter(user => {
+                        return user.username === newUser.username;
+                    }).length;
                     if (duplicateUser) {
                         reject('el usuario "' + newUser.username + '" ya existe');
                         return;
@@ -62,20 +66,44 @@ export function configureFakeBackend() {
                     users.push(newUser);
                     localStorage.setItem('users', JSON.stringify(users));
 
-                    resolve({ ok: true, json: () => ({}) });
+                    resolve({ok: true, json: () => ({})});
 
                     return;
                 }
                 if (url.endsWith('/entrust/register') && opts.method === 'POST') {
                     let newEntrust = JSON.parse(opts.body);
-                    newEntrust.id = users.length ? Math.max(...users.map(user => user.id)) + 1 : 1;
-                    users.push(newEntrust);
-                    localStorage.setItem('entrust', JSON.stringify(newEntrust));
+                    newEntrust.id = entrusts.length+1;
+                    entrusts.push(newEntrust);
+                    localStorage.setItem('entrusts', JSON.stringify(entrusts));
 
                     resolve({ ok: true, json: () => ({}) });
 
                     return;
                 }
+
+                if (url.endsWith('/entrust/google') && opts.method === 'POST') {
+                    let newEntrust = JSON.parse(opts.body);
+
+                    let url = 'https://maps.googleapis.com/maps/api/distancematrix/json?origins='+newEntrust.direccion1+'' +
+                        '&destinations='+newEntrust.direccion2;
+
+                    $.ajax({
+                        url: url,
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function (json) {
+                            console.log(json)
+                        },
+                        error: function (json) {
+                            console.log(json);
+                        },
+                    });
+
+                    resolve({ok: true, json: () => ({})});
+
+                    return;
+                }
+
                 realFetch(url, opts).then(response => resolve(response));
 
             }, 500);

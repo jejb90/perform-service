@@ -41,6 +41,8 @@ class HomePage extends React.Component {
         if (ruta.direccion1
             && ruta.direccion2 && ruta.tiempo && ruta.kilometros) {
             dispatch(entrustActions.register(ruta));
+            // dispatch(entrustActions.google(ruta));
+
         }
     }
 
