@@ -1,8 +1,9 @@
 # Logs
 logs
 *.log
+package-lock.json
 npm-debug.log*
-
+.idea/*
 # Runtime data
 pids
 *.pid
