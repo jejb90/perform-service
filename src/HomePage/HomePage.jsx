@@ -1,8 +1,8 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { connect } from 'react-redux';
+import {Link} from 'react-router-dom';
+import {connect} from 'react-redux';
 
-import { entrustActions } from '../_actions/entrust.actions';
+import {entrustActions} from '../_actions/entrust.actions';
 
 class HomePage extends React.Component {
     constructor(props) {
@@ -20,35 +20,79 @@ class HomePage extends React.Component {
 
         this.handleChange = this.handleChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
+        this.calculateDistanceB = this.calculateDistanceB.bind(this);
     }
+
     handleChange(event) {
-        const { name, value } = event.target;
-        const { ruta } = this.state;
+        const {name, value} = event.target;
+        const {ruta} = this.state;
         this.setState({
             ruta: {
                 ...ruta,
                 [name]: value
             }
-        });
+        }, this.calculateDistanceB);
+    }
+
+    calculateDistanceB() {
+
+        const {ruta} = this.state;
+        if (ruta.direccion1 != '' && ruta.direccion2 != '') {
+            this.calculateDistance(ruta.direccion1, ruta.direccion2)
+        }
+
     }
 
     handleSubmit(event) {
         event.preventDefault();
 
-        this.setState({ submitted: true });
-        const { ruta } = this.state;
-        const { dispatch } = this.props;
+        this.setState({submitted: true});
+        const {ruta} = this.state;
+        const {dispatch} = this.props;
+        ruta.kilometros = $('#kilometros').val();
+        ruta.tiempo = $('#tiempo').val();
+
         if (ruta.direccion1
-            && ruta.direccion2 && ruta.tiempo && ruta.kilometros) {
+            && ruta.direccion2
+            && ruta.kilometros
+            && ruta.tiempo
+        ) {
             dispatch(entrustActions.register(ruta));
-            // dispatch(entrustActions.google(ruta));
 
         }
     }
 
+    calculateDistance(origin, destination) {
+        var service = new google.maps.DistanceMatrixService();
+        service.getDistanceMatrix(
+            {
+                origins: [origin],
+                destinations: [destination],
+                travelMode: google.maps.TravelMode.DRIVING,
+                avoidHighways: false,
+                avoidTolls: false
+            }, this.callback);
+    }
+
+    callback(response, status) {
+        if (status != google.maps.DistanceMatrixStatus.OK) {
+            $('#result').html(err);
+        } else {
+            if (response.rows[0].elements[0].status === "ZERO_RESULTS" || response.rows[0].elements[0].status === "NOT_FOUND") {
+                $('#kilometros').val('');
+                $('#tiempo').val('');
+
+            } else {
+                // return response.rows[0].elements[0];
+                $('#kilometros').val(response.rows[0].elements[0].distance.value/1000);
+                $('#tiempo').val(response.rows[0].elements[0].duration.value);
+            }
+        }
+    }
+
     render() {
-        const { registering  } = this.props;
-        const { ruta, submitted } = this.state;
+        const {registering} = this.props;
+        const {ruta, submitted} = this.state;
         return (
             <div className="col-md-6 col-md-offset-3">
                 <p>Registrar el Servicio</p>
@@ -56,28 +100,33 @@ class HomePage extends React.Component {
                 <form name="form" onSubmit={this.handleSubmit}>
                     <div className={'form-group' + (submitted && !ruta.direccion1 ? ' has-error' : '')}>
                         <label htmlFor="firstName">Origen</label>
-                        <input type="text" className="form-control" name="direccion1" value={ruta.direccion1} onChange={this.handleChange} />
+                        <input type="text" className="form-control" name="direccion1" value={ruta.direccion1}
+                               onChange={this.handleChange}/>
                         {submitted && !ruta.direccion1 &&
                         <div className="help-block">Origen es requerido</div>
                         }
                     </div>
                     <div className={'form-group' + (submitted && !ruta.direccion2 ? ' has-error' : '')}>
                         <label htmlFor="lastName">Destino</label>
-                        <input type="text" className="form-control" name="direccion2" value={ruta.direccion2} onChange={this.handleChange} />
+                        <input type="text" className="form-control" name="direccion2" value={ruta.direccion2}
+                               onChange={this.handleChange}/>
                         {submitted && !ruta.direccion2 &&
                         <div className="help-block">Destino es requerido</div>
                         }
                     </div>
                     <div className={'form-group' + (submitted && !ruta.tiempo ? ' has-error' : '')}>
                         <label htmlFor="username">Tiempo</label>
-                        <input type="text" className="form-control" name="tiempo" value={ruta.tiempo} onChange={this.handleChange} />
+                        <input type="text" className="form-control" disabled={true}
+                               id="tiempo" name="tiempo" value={ruta.tiempo}
+                               onChange={this.handleChange}/>
                         {submitted && !ruta.tiempo &&
                         <div className="help-block">Tiempo es requerido</div>
                         }
                     </div>
                     <div className={'form-group' + (submitted && !ruta.kilometros ? ' has-error' : '')}>
                         <label htmlFor="password">Kilometros</label>
-                        <input type="text" className="form-control" name="kilometros" value={ruta.kilometros} onChange={this.handleChange} />
+                        <input type="text" className="form-control" disabled={true} id="kilometros" name="kilometros"
+                               value={ruta.kilometros} onChange={this.handleChange}/>
                         {submitted && !ruta.kilometros &&
                         <div className="help-block">kilometros es requerido</div>
                         }
@@ -85,10 +134,12 @@ class HomePage extends React.Component {
                     <div className="form-group">
                         <button className="btn btn-primary">Registrar</button>
                         {registering &&
-                        <img src="data:image/gif;base64,R0lGODlhEAAQAPIAAP///wAAAMLCwkJCQgAAAGJiYoKCgpKSkiH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAAEAAQAAADMwi63P4wyklrE2MIOggZnAdOmGYJRbExwroUmcG2LmDEwnHQLVsYOd2mBzkYDAdKa+dIAAAh+QQJCgAAACwAAAAAEAAQAAADNAi63P5OjCEgG4QMu7DmikRxQlFUYDEZIGBMRVsaqHwctXXf7WEYB4Ag1xjihkMZsiUkKhIAIfkECQoAAAAsAAAAABAAEAAAAzYIujIjK8pByJDMlFYvBoVjHA70GU7xSUJhmKtwHPAKzLO9HMaoKwJZ7Rf8AYPDDzKpZBqfvwQAIfkECQoAAAAsAAAAABAAEAAAAzMIumIlK8oyhpHsnFZfhYumCYUhDAQxRIdhHBGqRoKw0R8DYlJd8z0fMDgsGo/IpHI5TAAAIfkECQoAAAAsAAAAABAAEAAAAzIIunInK0rnZBTwGPNMgQwmdsNgXGJUlIWEuR5oWUIpz8pAEAMe6TwfwyYsGo/IpFKSAAAh+QQJCgAAACwAAAAAEAAQAAADMwi6IMKQORfjdOe82p4wGccc4CEuQradylesojEMBgsUc2G7sDX3lQGBMLAJibufbSlKAAAh+QQJCgAAACwAAAAAEAAQAAADMgi63P7wCRHZnFVdmgHu2nFwlWCI3WGc3TSWhUFGxTAUkGCbtgENBMJAEJsxgMLWzpEAACH5BAkKAAAALAAAAAAQABAAAAMyCLrc/jDKSatlQtScKdceCAjDII7HcQ4EMTCpyrCuUBjCYRgHVtqlAiB1YhiCnlsRkAAAOwAAAAAAAAAAAA==" />
+                        <img
+                            src="data:image/gif;base64,R0lGODlhEAAQAPIAAP///wAAAMLCwkJCQgAAAGJiYoKCgpKSkiH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAAEAAQAAADMwi63P4wyklrE2MIOggZnAdOmGYJRbExwroUmcG2LmDEwnHQLVsYOd2mBzkYDAdKa+dIAAAh+QQJCgAAACwAAAAAEAAQAAADNAi63P5OjCEgG4QMu7DmikRxQlFUYDEZIGBMRVsaqHwctXXf7WEYB4Ag1xjihkMZsiUkKhIAIfkECQoAAAAsAAAAABAAEAAAAzYIujIjK8pByJDMlFYvBoVjHA70GU7xSUJhmKtwHPAKzLO9HMaoKwJZ7Rf8AYPDDzKpZBqfvwQAIfkECQoAAAAsAAAAABAAEAAAAzMIumIlK8oyhpHsnFZfhYumCYUhDAQxRIdhHBGqRoKw0R8DYlJd8z0fMDgsGo/IpHI5TAAAIfkECQoAAAAsAAAAABAAEAAAAzIIunInK0rnZBTwGPNMgQwmdsNgXGJUlIWEuR5oWUIpz8pAEAMe6TwfwyYsGo/IpFKSAAAh+QQJCgAAACwAAAAAEAAQAAADMwi6IMKQORfjdOe82p4wGccc4CEuQradylesojEMBgsUc2G7sDX3lQGBMLAJibufbSlKAAAh+QQJCgAAACwAAAAAEAAQAAADMgi63P7wCRHZnFVdmgHu2nFwlWCI3WGc3TSWhUFGxTAUkGCbtgENBMJAEJsxgMLWzpEAACH5BAkKAAAALAAAAAAQABAAAAMyCLrc/jDKSatlQtScKdceCAjDII7HcQ4EMTCpyrCuUBjCYRgHVtqlAiB1YhiCnlsRkAAAOwAAAAAAAAAAAA=="/>
                         }
                         <Link to="/login" className="btn btn-link">Cancelar</Link>
                     </div>
+                    <div id="result"></div>
                 </form>
 
             </div>
@@ -97,8 +148,8 @@ class HomePage extends React.Component {
 }
 
 function mapStateToProps(state) {
-    const { users, authentication } = state;
-    const { user } = authentication;
+    const {users, authentication} = state;
+    const {user} = authentication;
     return {
         user,
         users
@@ -106,4 +157,4 @@ function mapStateToProps(state) {
 }
 
 const connectedHomePage = connect(mapStateToProps)(HomePage);
-export { connectedHomePage as HomePage };
+export {connectedHomePage as HomePage};
