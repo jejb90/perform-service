@@ -21,6 +21,8 @@ class HomePage extends React.Component {
         this.handleChange = this.handleChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
         this.calculateDistanceB = this.calculateDistanceB.bind(this);
+        this.geocoder = this.geocoder.bind(this);
+        this.callback = this.callback.bind(this);
     }
 
     handleChange(event) {
@@ -74,6 +76,51 @@ class HomePage extends React.Component {
             }, this.callback);
     }
 
+    geocoder() {
+
+
+        const {ruta} = this.state;
+        var geocoder = new google.maps.Geocoder();
+        console.log()
+        var cor1 = '';
+        var mapOptions = {
+            center: new google.maps.LatLng(4.6482836,-74.2482387),
+            zoom: 6,
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        var map = new google.maps.Map(document.getElementById("map"), mapOptions);
+
+        if (ruta.direccion1 != '') {
+            geocoder.geocode({'address': ruta.direccion1}, function (results, status) {
+                if (status == 'OK') {
+                    var place = new google.maps.LatLng(results[0].geometry.location.lat()
+                        , results[0].geometry.location.lng());
+                    var marker = new google.maps.Marker({
+                        position: place
+                        , title: ruta.direccion1
+                        , map: map
+                        ,
+                    });
+                }
+            });
+        }
+
+        if (ruta.direccion2 != '') {
+            geocoder.geocode({'address': ruta.direccion2}, function (results, status) {
+                if (status == 'OK') {
+                    var place = new google.maps.LatLng(results[0].geometry.location.lat()
+                        , results[0].geometry.location.lng());
+                    var marker = new google.maps.Marker({
+                        position: place
+                        , title: ruta.direccion2
+                        , map: map
+                        ,
+                    });
+                }
+            });
+        }
+    }
+
     callback(response, status) {
         if (status != google.maps.DistanceMatrixStatus.OK) {
             $('#result').html(err);
@@ -84,8 +131,9 @@ class HomePage extends React.Component {
 
             } else {
                 // return response.rows[0].elements[0];
-                $('#kilometros').val(response.rows[0].elements[0].distance.value/1000);
+                $('#kilometros').val(response.rows[0].elements[0].distance.value / 1000);
                 $('#tiempo').val(response.rows[0].elements[0].duration.value);
+                this.geocoder()
             }
         }
     }
@@ -94,60 +142,67 @@ class HomePage extends React.Component {
         const {registering} = this.props;
         const {ruta, submitted} = this.state;
         return (
-            <div className="col-md-6 col-md-offset-3">
-                <p>Registrar el Servicio</p>
+            <div className="row">
+                <div className="col-md-6">
+                    <p>Registrar el Servicio</p>
 
-                <form name="form" onSubmit={this.handleSubmit}>
-                    <div className={'form-group' + (submitted && !ruta.direccion1 ? ' has-error' : '')}>
-                        <label htmlFor="firstName">Origen</label>
-                        <input type="text" className="form-control" name="direccion1" value={ruta.direccion1}
-                               onChange={this.handleChange}/>
-                        {submitted && !ruta.direccion1 &&
-                        <div className="help-block">Origen es requerido</div>
-                        }
-                    </div>
-                    <div className={'form-group' + (submitted && !ruta.direccion2 ? ' has-error' : '')}>
-                        <label htmlFor="lastName">Destino</label>
-                        <input type="text" className="form-control" name="direccion2" value={ruta.direccion2}
-                               onChange={this.handleChange}/>
-                        {submitted && !ruta.direccion2 &&
-                        <div className="help-block">Destino es requerido</div>
-                        }
-                    </div>
-                    <div className={'form-group' + (submitted && !ruta.tiempo ? ' has-error' : '')}>
-                        <label htmlFor="username">Tiempo</label>
-                        <input type="text" className="form-control" disabled={true}
-                               id="tiempo" name="tiempo" value={ruta.tiempo}
-                               onChange={this.handleChange}/>
-                        {submitted && !ruta.tiempo &&
-                        <div className="help-block">Tiempo es requerido</div>
-                        }
-                    </div>
-                    <div className={'form-group' + (submitted && !ruta.kilometros ? ' has-error' : '')}>
-                        <label htmlFor="password">Kilometros</label>
-                        <input type="text" className="form-control" disabled={true} id="kilometros" name="kilometros"
-                               value={ruta.kilometros} onChange={this.handleChange}/>
-                        {submitted && !ruta.kilometros &&
-                        <div className="help-block">kilometros es requerido</div>
-                        }
-                    </div>
-                    <div className="form-group">
-                        <button className="btn btn-primary">Registrar</button>
-                        {registering &&
-                        <img
-                            src="data:image/gif;base64,R0lGODlhEAAQAPIAAP///wAAAMLCwkJCQgAAAGJiYoKCgpKSkiH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAAEAAQAAADMwi63P4wyklrE2MIOggZnAdOmGYJRbExwroUmcG2LmDEwnHQLVsYOd2mBzkYDAdKa+dIAAAh+QQJCgAAACwAAAAAEAAQAAADNAi63P5OjCEgG4QMu7DmikRxQlFUYDEZIGBMRVsaqHwctXXf7WEYB4Ag1xjihkMZsiUkKhIAIfkECQoAAAAsAAAAABAAEAAAAzYIujIjK8pByJDMlFYvBoVjHA70GU7xSUJhmKtwHPAKzLO9HMaoKwJZ7Rf8AYPDDzKpZBqfvwQAIfkECQoAAAAsAAAAABAAEAAAAzMIumIlK8oyhpHsnFZfhYumCYUhDAQxRIdhHBGqRoKw0R8DYlJd8z0fMDgsGo/IpHI5TAAAIfkECQoAAAAsAAAAABAAEAAAAzIIunInK0rnZBTwGPNMgQwmdsNgXGJUlIWEuR5oWUIpz8pAEAMe6TwfwyYsGo/IpFKSAAAh+QQJCgAAACwAAAAAEAAQAAADMwi6IMKQORfjdOe82p4wGccc4CEuQradylesojEMBgsUc2G7sDX3lQGBMLAJibufbSlKAAAh+QQJCgAAACwAAAAAEAAQAAADMgi63P7wCRHZnFVdmgHu2nFwlWCI3WGc3TSWhUFGxTAUkGCbtgENBMJAEJsxgMLWzpEAACH5BAkKAAAALAAAAAAQABAAAAMyCLrc/jDKSatlQtScKdceCAjDII7HcQ4EMTCpyrCuUBjCYRgHVtqlAiB1YhiCnlsRkAAAOwAAAAAAAAAAAA=="/>
-                        }
-                        <Link to="/login" className="btn btn-link">Cancelar</Link>
-                    </div>
-                    <div id="result"></div>
-                </form>
+                    <form name="form" onSubmit={this.handleSubmit}>
+                        <div className={'form-group' + (submitted && !ruta.direccion1 ? ' has-error' : '')}>
+                            <label htmlFor="firstName">Origen</label>
+                            <input type="text" className="form-control" name="direccion1" value={ruta.direccion1}
+                                   onChange={this.handleChange}/>
+                            {submitted && !ruta.direccion1 &&
+                            <div className="help-block">Origen es requerido</div>
+                            }
+                        </div>
+                        <div className={'form-group' + (submitted && !ruta.direccion2 ? ' has-error' : '')}>
+                            <label htmlFor="lastName">Destino</label>
+                            <input type="text" className="form-control" name="direccion2" value={ruta.direccion2}
+                                   onChange={this.handleChange}/>
+                            {submitted && !ruta.direccion2 &&
+                            <div className="help-block">Destino es requerido</div>
+                            }
+                        </div>
+                        <div className={'form-group' + (submitted && !ruta.tiempo ? ' has-error' : '')}>
+                            <label htmlFor="username">Tiempo</label>
+                            <input type="text" className="form-control" disabled={true}
+                                   id="tiempo" name="tiempo" value={ruta.tiempo}
+                                   onChange={this.handleChange}/>
+                            {submitted && !ruta.tiempo &&
+                            <div className="help-block">Tiempo es requerido</div>
+                            }
+                        </div>
+                        <div className={'form-group' + (submitted && !ruta.kilometros ? ' has-error' : '')}>
+                            <label htmlFor="password">Kilometros</label>
+                            <input type="text" className="form-control" disabled={true} id="kilometros"
+                                   name="kilometros"
+                                   value={ruta.kilometros} onChange={this.handleChange}/>
+                            {submitted && !ruta.kilometros &&
+                            <div className="help-block">kilometros es requerido</div>
+                            }
+                        </div>
+                        <div className="form-group">
+                            <button className="btn btn-primary">Registrar</button>
+                            {registering &&
+                            <img
+                                src="data:image/gif;base64,R0lGODlhEAAQAPIAAP///wAAAMLCwkJCQgAAAGJiYoKCgpKSkiH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAAEAAQAAADMwi63P4wyklrE2MIOggZnAdOmGYJRbExwroUmcG2LmDEwnHQLVsYOd2mBzkYDAdKa+dIAAAh+QQJCgAAACwAAAAAEAAQAAADNAi63P5OjCEgG4QMu7DmikRxQlFUYDEZIGBMRVsaqHwctXXf7WEYB4Ag1xjihkMZsiUkKhIAIfkECQoAAAAsAAAAABAAEAAAAzYIujIjK8pByJDMlFYvBoVjHA70GU7xSUJhmKtwHPAKzLO9HMaoKwJZ7Rf8AYPDDzKpZBqfvwQAIfkECQoAAAAsAAAAABAAEAAAAzMIumIlK8oyhpHsnFZfhYumCYUhDAQxRIdhHBGqRoKw0R8DYlJd8z0fMDgsGo/IpHI5TAAAIfkECQoAAAAsAAAAABAAEAAAAzIIunInK0rnZBTwGPNMgQwmdsNgXGJUlIWEuR5oWUIpz8pAEAMe6TwfwyYsGo/IpFKSAAAh+QQJCgAAACwAAAAAEAAQAAADMwi6IMKQORfjdOe82p4wGccc4CEuQradylesojEMBgsUc2G7sDX3lQGBMLAJibufbSlKAAAh+QQJCgAAACwAAAAAEAAQAAADMgi63P7wCRHZnFVdmgHu2nFwlWCI3WGc3TSWhUFGxTAUkGCbtgENBMJAEJsxgMLWzpEAACH5BAkKAAAALAAAAAAQABAAAAMyCLrc/jDKSatlQtScKdceCAjDII7HcQ4EMTCpyrCuUBjCYRgHVtqlAiB1YhiCnlsRkAAAOwAAAAAAAAAAAA=="/>
+                            }
+                            <Link to="/login" className="btn btn-link">Cancelar</Link>
+                        </div>
+                    </form>
+
+                </div>
+
+                <div className="col-md-6" id="map"></div>
 
             </div>
         );
     }
 }
 
-function mapStateToProps(state) {
+function
+
+mapStateToProps(state) {
     const {users, authentication} = state;
     const {user} = authentication;
     return {
@@ -156,5 +211,11 @@ function mapStateToProps(state) {
     };
 }
 
-const connectedHomePage = connect(mapStateToProps)(HomePage);
-export {connectedHomePage as HomePage};
+const
+    connectedHomePage = connect(mapStateToProps)(HomePage);
+export {
+    connectedHomePage
+        as
+            HomePage
+}
+    ;
