@@ -131,8 +131,8 @@ class HomePage extends React.Component {
 
             } else {
                 // return response.rows[0].elements[0];
-                $('#kilometros').val(response.rows[0].elements[0].distance.value / 1000);
-                $('#tiempo').val(response.rows[0].elements[0].duration.value);
+                $('#kilometros').val(response.rows[0].elements[0].distance.text);
+                $('#tiempo').val((response.rows[0].elements[0].duration.text));
                 this.geocoder()
             }
         }
